@@ -27,9 +27,24 @@ end
 
 local function update_floating_window_content(buf)
 	local lines = {}
+
+	-- Convert the file_open_counts table to a sortable list
+	local sorted_files = {}
 	for filename, count in pairs(file_open_counts) do
-		table.insert(lines, filename .. " - Opened " .. count .. " times")
+		table.insert(sorted_files, { filename = filename, count = count })
 	end
+
+	-- Sort the list by the count, in descending order
+	table.sort(sorted_files, function(a, b)
+		return a.count > b.count
+	end)
+
+	-- Prepare the lines for the buffer
+	for _, entry in ipairs(sorted_files) do
+		table.insert(lines, entry.filename .. " - Opened " .. entry.count .. " times")
+	end
+
+	-- Update the buffer with sorted lines
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 end
 
@@ -52,6 +67,7 @@ end
 local function on_buf_enter()
 	if not is_toggling then
 		local buf_name = vim.api.nvim_buf_get_name(0)
+
 		local file_name = vim.fn.fnamemodify(buf_name, ":t")
 
 		-- Increment the open count for the current file
